@@ -1,10 +1,10 @@
 
 # Step 2
-1. Client → POST /api/jobs
+>1. Client → POST /api/jobs
 
-* Hits createJobController
+*  Hits createJobController
 
-2. Inside createJobController
+>2. Inside createJobController
 
 * Generate a unique jobId (utils/JobID.js)
 
@@ -12,7 +12,7 @@
 
 * Immediately call simulateJob(jobId) → starts async progress updates
 
-3. Inside simulateJob(jobId)
+>3. Inside simulateJob(jobId)
 
 * Uses setInterval to periodically call updateJob(jobId, …)
 
@@ -20,13 +20,13 @@
 
 * Once progress hits 100 → marks job completed and clears the interval
 
-4. Client → GET /api/jobs/:jobId
+>4. Client → GET /api/jobs/:jobId
 
 * Can poll anytime to see current job state
 
 ---
 
-# Step 3
+# Step 3___File system & cleanup
 ### Creating folder in Node Js
 
 **Using "fs.promises.mkdir()" (Modern Async/Await):**
@@ -74,7 +74,7 @@
                 }
         }
 
-# SimulateJob.services.js
+## SimulateJob.services.js
 **await new Promise(res=>setTimeout(res, 100));**
 
     The code snippet await new Promise(res => setTimeout(res, 100)); is a standard JavaScript pattern used to create an asynchronous delay or "sleep" function. It pauses the execution of an async function for a specified duration without blocking the main JavaScript thread. 
@@ -87,3 +87,19 @@ await ...: This keyword can only be used inside an async function. It pauses the
 In summary, the entire line of code tells the program: "Pause here for 100 milliseconds, and then continue executing the rest of the code in this async function".
 >However, it only pauses the execution of the current async function (the code using await), not the main synchronous JavaScript thread or other running code.
        
+---
+# STEP-4 — Running OS Commands from Node.js
+---
+## 4.1: OS command execution ✅
+### Node Child Process
+NodeJS is designed to be single-threaded, but it provides a child_process module to create and manage child processes. This allows you to run system commands, execute other scripts, and perform computationally expensive tasks in parallel.
+
+**The child_process module in NodeJS provides four methods to create child processes:**
+
+>spawn(): Launches a new process with a given command. It streams data between the parent and child processes.
+
+>exec(): Runs a command in a shell and buffers the output. It’s useful for short-running commands.
+
+>execFile(): Similar to exec, but it runs a specific executable file directly without a shell.
+
+>fork(): A special case of spawn used to create NodeJS child processes. It enables communication between parent and child processes using send and on('message').
