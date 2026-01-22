@@ -13,30 +13,30 @@ async function createFolder(folderName) {
     }
 }
 
-async function updateFile(folderName) {
-    const dirPath = path.join(os.tmpdir(), folderName);
-    const filePath = path.join(dirPath, 'demo.txt');
+// async function updateFile(folderName) {
+//     const dirPath = path.join(os.tmpdir(), folderName);
+//     const filePath = path.join(dirPath, 'demo.txt');
 
-    try {
-        const jobData = jobs.get(folderName);
+//     try {
+//         const jobData = jobs.get(folderName);
 
-        if (!jobData) {
-            throw new Error('Job not found');
-        }
+//         if (!jobData) {
+//             throw new Error('Job not found');
+//         }
 
-        await fs.writeFile(
-            filePath,
-            JSON.stringify(jobData, null, 2),
-            'utf-8'
-        );
+//         await fs.writeFile(
+//             filePath,
+//             JSON.stringify(jobData, null, 2),
+//             'utf-8'
+//         );
 
-        console.log('File updated successfully');
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-    }
+//         console.log('File updated successfully');
+//     } catch (error) {
+//         console.error(`Error: ${error.message}`);
+//     }
 
   
-}
+// }
 
 
 async function deleteJob(folderName){
@@ -55,6 +55,5 @@ async function deleteJob(folderName){
 
 module.exports = {
     createFolder,
-    updateFile,
     deleteJob
 };

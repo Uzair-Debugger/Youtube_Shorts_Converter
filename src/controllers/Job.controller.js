@@ -1,4 +1,5 @@
 const path = require('path')
+const os = require('os')
 const { createJob } = require('../services/Functions');
 const { runJob } = require('../services/JobRunner.service');
 const { generateJobId } = require('../utils/JobID')
@@ -7,13 +8,13 @@ exports.createJobController = (req, res) => {
   const jobId = generateJobId();
   //   const { command } = req.body; // get url from frontend
 
-  const jobDir =  path.join('D:', 'videos') // configure path later in .env for deployment
-  const command = `yt-dlp -o "${jobDir}/%(title)s.%(ext)s" https://youtu.be/eCvYgEslNVI`; // testing my own url
+  const jobDir =  path.join(os.tmpdir(), jobId) // configure path later in .env for deployment
+  const command = `yt-dlp -f mp4 -o "${jobDir}/video.mp4" https://youtu.be/eCvYgEslNVI`
 
   createJob(jobId);
 
   // 🔥 background execution
-  runJob(jobId, command);
+  runJob(jobId, command, jobDir);
 
   res.json({ jobId });
 };

@@ -1,5 +1,5 @@
 const jobs = require('../store/job');
-const { updateFile, createFolder } = require('./CreateFolder.services');
+const { createFolder } = require('./CreateFolder.services');
 
 // To create new Job
 exports.createJob = async (jobid) => {
@@ -33,13 +33,14 @@ exports.updateJob = async (jobid, message, status, progress) => {
         updatedAt: new Date()
     });
 
-   try {
+//    try {
     
-       await updateFile(jobid)
-   } catch (error) {
-    console.log(`updateFile() Error: ${error.message}`)
-   }
-    
+//        await updateFile(jobid)
+//    } catch (error) {
+//     console.log(`updateFile() Error: ${error.message}`)
+//    }
+
+    console.log(status, progress)
 };
 
 
