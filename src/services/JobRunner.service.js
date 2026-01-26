@@ -1,10 +1,11 @@
-const path = require('path')
-const { downloadVideo } = require('./DownloadVideo.services');
-const { updateJob } = require('./Functions');
-const { deleteJob } = require('./CreateFolder.services');
-const { audioExtractor } = require('./AudioExtractor.service');
+import path from 'path';
+import { downloadVideo } from './DownloadVideo.services.js';
+import { updateJob } from './Functions.js';
+import { deleteJob } from './CreateFolder.services.js';
+import { audioExtractor } from './AudioExtractor.service.js';
+import { transcribe } from './Transcription.js';
 
-exports.runJob = async (jobId, command, jobDir) => {
+export const runJob = async (jobId, command, jobDir) => {
   try {
     const videoPath = path.join(jobDir, 'video.mp4')
     const audioPath = path.join(jobDir, 'audio.wav')
@@ -15,7 +16,7 @@ exports.runJob = async (jobId, command, jobDir) => {
 
     if (!result.success) {
       console.log(result)
-      await updateJob(jobId, result.error, 'failed', 100);
+      await updateJob(jobId, result.error, 'failed', 0);
       return;
     }
 
@@ -23,9 +24,17 @@ exports.runJob = async (jobId, command, jobDir) => {
     
     const audioResult = await audioExtractor(videoPath, audioPath);
     if(!audioResult.success){
-      await updateJob(jobId, audioResult.error, 'failed', 100);
+      await updateJob(jobId, audioResult.error, 'failed', 0);
       return;
     }
+
+    const transcribeAudio = await transcribe(audioPath)
+
+    // if(!transcribeAudio.success){
+    //   console.log("Audio Transcription failed!");
+    //   await updateJob(jobId, "Transcription failed", "Failed", 0)
+    //   return;
+    // }
     
     await updateJob(jobId, 'Audio extracted', 'completed', 100)
 
@@ -33,6 +42,6 @@ exports.runJob = async (jobId, command, jobDir) => {
     // await deleteJob(jobId);
 
   } catch (error) {
-    await updateJob(jobId, error.message, 'failed', 100);
+    await updateJob(jobId, error.message, 'failed', 0);
   }
 };

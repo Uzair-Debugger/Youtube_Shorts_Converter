@@ -1,6 +1,5 @@
-// const express = require('express')
-const app = require('./app')
-// app.use(express.json())
+import app from './app.js'
+
 app.get('/', function(req, res){
     res.json({status: "Running..."})
 })

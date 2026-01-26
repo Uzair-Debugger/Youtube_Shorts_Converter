@@ -1,11 +1,9 @@
-const express = require('express')
+import express from 'express'
+import { createJobController, getJobController } from '../controllers/Job.controller.js'
+
 const router = express.Router()
-const {
-  createJobController,
-  getJobController
-} = require('../controllers/Job.controller')
 
 router.post('/jobs', createJobController)
 router.get('/jobs/:jobId', getJobController)
 
-module.exports = router
+export const jobRoutes = router

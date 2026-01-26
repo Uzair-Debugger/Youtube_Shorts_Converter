@@ -1,3 +1,1 @@
-const jobs = new Map()
-
-module.exports = jobs
+export const jobs = new Map();

@@ -1,16 +1,16 @@
-const { exec } = require("child_process")
-const util = require('util')
-const execPromise= util.promisify(exec)
+import { exec } from 'child_process';
+import util from 'util';
+const execPromise = util.promisify(exec);
 
-exports.audioExtractor = async (videoPath, audioPath) =>{
+export const audioExtractor = async (videoPath, audioPath) => {
     try {
         const command = `ffmpeg -y -i "${videoPath}" -ar 16000 -ac 1 "${audioPath}"`;
 
         await execPromise(command);
-        
-        return{success:true}
+
+        return { success: true }
     } catch (error) {
-        return{
+        return {
             success: false,
             error: error.message
         }

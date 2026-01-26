@@ -1,28 +1,28 @@
-const util = require('util')
-const { exec } = require('child_process');
-const execPromise = util.promisify(exec)
+import util from 'util';
+import { exec } from 'child_process';
+const execPromise = util.promisify(exec);
 // Counts the number of directory in
 // current working directory
 
-async function downloadVideo(command) {
-    try{
-        const {stderr, stdout} = await execPromise(command)
-        
-        return{
+export const downloadVideo = async (command) => {
+    try {
+        const { stderr, stdout } = await execPromise(command)
+
+        return {
             success: true,
             stdout,
             stderr
         }
     }
-    catch(error){
-        return{
+    catch (error) {
+        return {
             success: false,
             error: error.message
         }
     }
 }
 
-module.exports = {downloadVideo};
+// module.exports = {downloadVideo};
 
 /*Key Components Summary
 const execPromise = util.promisify(exec): This line creates a new version of exec called execPromise that returns a Promise instead of requiring a callback.

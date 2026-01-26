@@ -1,8 +1,9 @@
-const express = require('express')
-const jobRoutes = require('./routes/Job.routes')
+import express from 'express'
+import { jobRoutes } from './routes/Job.routes.js'
+
 const app = express()
 
-app.use(function(req, res, next){
+app.use(function (req, res, next) {
 
     console.log(`${req.method} ${req.url}`)
 
@@ -16,4 +17,4 @@ app.use('/api', jobRoutes)
 
 
 
-module.exports = app
+export default app

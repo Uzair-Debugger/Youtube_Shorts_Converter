@@ -1,14 +1,14 @@
-const path = require('path')
-const os = require('os')
-const { createJob } = require('../services/Functions');
-const { runJob } = require('../services/JobRunner.service');
-const { generateJobId } = require('../utils/JobID')
+import path from 'path'
+import os from 'os'
+import { createJob, getJob } from '../services/Functions.js';
+import { runJob } from '../services/JobRunner.service.js';
+import { generateJobId } from '../utils/JobID.js'
 
-exports.createJobController = (req, res) => {
+export const createJobController = (req, res) => {
   const jobId = generateJobId();
   //   const { command } = req.body; // get url from frontend
 
-  const jobDir =  path.join(os.tmpdir(), jobId) // configure path later in .env for deployment
+  const jobDir = path.join(os.tmpdir(), jobId) // configure path later in .env for deployment
   const command = `yt-dlp -f mp4 -o "${jobDir}/video.mp4" https://youtu.be/eCvYgEslNVI`
 
   createJob(jobId);
@@ -21,7 +21,7 @@ exports.createJobController = (req, res) => {
 
 
 
-exports.getJobController = (req, res) => {
+export const getJobController = (req, res) => {
 
   const { jobId } = req.params
   const job = getJob(jobId)

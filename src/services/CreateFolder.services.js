@@ -1,9 +1,9 @@
-const fs = require('fs').promises;
-const os = require('os')
-const path = require('path');
-const jobs = require('../store/job');
+import fs from 'fs/promises'
+import os from 'os'
+import path from 'path';
+import { jobs } from '../store/job.js';
 
-async function createFolder(folderName) {
+export const createFolder = async (folderName) => {
     const dirPath = path.join(os.tmpdir(), folderName);
     try {
         await fs.mkdir(dirPath, { recursive: true });
@@ -35,25 +35,21 @@ async function createFolder(folderName) {
 //         console.error(`Error: ${error.message}`);
 //     }
 
-  
+
 // }
 
 
-async function deleteJob(folderName){
+export const deleteJob = async (folderName) => {
 
     const dirPath = path.join(os.tmpdir(), folderName)
-    
 
-        try {
-            await fs.rm(dirPath, {recursive: true, force:true})
-            console.log(`${folderName} deleted successfully!`)
-        } catch (error) {
-            console.log(`Failed to delete ${folderName}, Error: ${error.message}`)
-        }
-    
+
+    try {
+        await fs.rm(dirPath, { recursive: true, force: true })
+        console.log(`${folderName} deleted successfully!`)
+    } catch (error) {
+        console.log(`Failed to delete ${folderName}, Error: ${error.message}`)
+    }
+
 }
 
-module.exports = {
-    createFolder,
-    deleteJob
-};

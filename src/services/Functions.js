@@ -1,8 +1,8 @@
-const jobs = require('../store/job');
-const { createFolder } = require('./CreateFolder.services');
+import { jobs } from '../store/job.js';
+import { createFolder } from './CreateFolder.services.js';
 
 // To create new Job
-exports.createJob = async (jobid) => {
+export const createJob = async (jobid) => {
     jobs.set(jobid, {
         id: jobid,
         status: "Queued",
@@ -12,7 +12,7 @@ exports.createJob = async (jobid) => {
         updatedAt: new Date()
     });
     try {
-        
+
         await createFolder(jobid)
     } catch (error) {
         console.log(`createFolder() Error: ${error.message}`)
@@ -21,7 +21,7 @@ exports.createJob = async (jobid) => {
 }
 
 // To update the job
-exports.updateJob = async (jobid, message, status, progress) => {
+export const updateJob = async (jobid, message, status, progress) => {
     if (!jobs.has(jobid)) return;
 
 
@@ -33,17 +33,17 @@ exports.updateJob = async (jobid, message, status, progress) => {
         updatedAt: new Date()
     });
 
-//    try {
-    
-//        await updateFile(jobid)
-//    } catch (error) {
-//     console.log(`updateFile() Error: ${error.message}`)
-//    }
+    //    try {
+
+    //        await updateFile(jobid)
+    //    } catch (error) {
+    //     console.log(`updateFile() Error: ${error.message}`)
+    //    }
 
     console.log(status, progress)
 };
 
 
 // To get the Job
-exports.getJob = (jobid) => jobs.get(jobid)
+export const getJob = (jobid) => jobs.get(jobid)
 
