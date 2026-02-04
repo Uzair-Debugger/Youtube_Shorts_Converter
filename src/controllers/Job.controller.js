@@ -1,6 +1,6 @@
 import path from 'path'
 import os from 'os'
-import { createJob, getJob } from '../services/Functions.js';
+import { createJob, getJob } from '../services/JobState.service.js';
 import { runJob } from '../services/JobRunner.service.js';
 import { generateJobId } from '../utils/JobID.js'
 
@@ -9,12 +9,12 @@ export const createJobController = (req, res) => {
   //   const { command } = req.body; // get url from frontend
 
   const jobDir = path.join(os.tmpdir(), jobId) // configure path later in .env for deployment
-  const command = `yt-dlp -f mp4 -o "${jobDir}/video.mp4" https://youtu.be/eCvYgEslNVI`
+  const youtubeUrl = `https://youtu.be/V101LJO1mhc`
 
   createJob(jobId);
 
   // 🔥 background execution
-  runJob(jobId, command, jobDir);
+  runJob(jobId, youtubeUrl, jobDir);
 
   res.json({ jobId });
 };

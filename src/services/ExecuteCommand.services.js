@@ -4,7 +4,7 @@ const execPromise = util.promisify(exec);
 // Counts the number of directory in
 // current working directory
 
-export const downloadVideo = async (command) => {
+export const executeCommand = async (command) => {
     try {
         const { stderr, stdout } = await execPromise(command)
 
@@ -22,7 +22,7 @@ export const downloadVideo = async (command) => {
     }
 }
 
-// module.exports = {downloadVideo};
+// module.exports = {executeCommand};
 
 /*Key Components Summary
 const execPromise = util.promisify(exec): This line creates a new version of exec called execPromise that returns a Promise instead of requiring a callback.

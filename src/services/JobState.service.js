@@ -40,7 +40,7 @@ export const updateJob = async (jobid, message, status, progress) => {
     //     console.log(`updateFile() Error: ${error.message}`)
     //    }
 
-    console.log(status, progress)
+    console.log(message, status, progress,"%")
 };
 
 
