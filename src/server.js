@@ -1,4 +1,5 @@
 import app from './app.js'
+import { config } from './config/PortConfig.js'
 
 app.get('/', function(req, res){
     res.json({status: "Running..."})
@@ -17,6 +18,6 @@ app.post('/echo', function(req, res){
     }
 })
 
-app.listen(3003,()=>{
-    console.log("Server running on PORT 3003")
+app.listen(config.port,()=>{
+    console.log(`Server running on PORT ${config.port}`)
 })

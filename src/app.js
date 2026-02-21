@@ -1,7 +1,11 @@
 import express from 'express'
+import cors from 'cors'
 import { jobRoutes } from './routes/Job.routes.js'
 
 const app = express()
+
+// CORS must be first middleware
+app.use(cors())
 
 app.use(function (req, res, next) {
 

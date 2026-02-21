@@ -1,22 +1,28 @@
-import path from 'path'
 import os from 'os'
+import path from 'path'
 import { createJob, getJob } from '../services/JobState.service.js';
 import { runJob } from '../services/JobRunner.service.js';
 import { generateJobId } from '../utils/JobID.js'
 
-export const createJobController = (req, res) => {
-  const jobId = generateJobId();
-  //   const { command } = req.body; // get url from frontend
 
-  const jobDir = path.join(os.tmpdir(), jobId) // configure path later in .env for deployment
-  const youtubeUrl = `https://youtu.be/V101LJO1mhc`
+export const createJobController = (req, res) => {
+  const {noOfShorts, youtubeUrl} = req.body
+
+  const jobId = generateJobId();
+
+  const jobDir = path.join(process.env.TEMP_DIR, jobId) 
 
   createJob(jobId);
 
   // 🔥 background execution
-  runJob(jobId, youtubeUrl, jobDir);
+  runJob(jobId, youtubeUrl, noOfShorts, jobDir);
 
-  res.json({ jobId });
+  res.json({ 
+    jobId: jobId,
+    message: `Job created successfully`,
+    youtubeUrl: youtubeUrl,
+    noOfShorts: noOfShorts
+  });
 };
 
 

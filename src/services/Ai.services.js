@@ -38,35 +38,38 @@ export const transcribe = async (audioPath) => {
 };
 
 
-export const analyzeBestMoment = async(audioTranscript, videoDuration) =>{
+export const analyzeBestMoment = async(audioTranscript, noOfShorts, videoDuration) =>{
 
   try {
 const prompt = `
-You are an expert YouTube Shorts editor and content analyst.
+You are an expert YouTube Shorts editor, content analyst and an expert YouTube Shorts creator.
 
-Your task is to analyze the transcript and identify the SINGLE most viral, engaging, and emotionally impactful 45–60 second segment.
+Your task is to analyze the transcript and identify exactly ${noOfShorts} number of most viral, engaging, factual discovery and emotionally impactful 45–60 second segment.
 
-Video Duration: ${videoDuration} seconds
+Video Duration: ${videoDuration} seconds.
 
 Transcript:
 "${audioTranscript}"
 
 CRITICAL RULES:
 1. The segment must be EXACTLY between 45-60 seconds (endTime - startTime).
-2. The segment must be within video bounds (0 to ${videoDuration}).
-3. Avoid the first 60 seconds unless it is clearly the strongest moment in the entire video.
-4. Choose the moment that has the highest viral potential based on:
+2. The short must Start from START OF SENTENCE and must End on an END OF Sentence.
+3. Avoid starting and ending of the short on half of sentence no matter if it exceeds few seconds i.e 1-10s from the bounded duration.
+4. The segment must be within video bounds (0 to ${videoDuration}).
+5. Avoid the first 60 seconds unless it is clearly the strongest moment in the entire video.
+6. Choose the moment that has the highest viral potential based on:
    - a concrete revelation or fact
    - a strong emotional reaction
    - a surprising or controversial statement
    - a turning point in the story
    - a clear insight or lesson
-5. Your reasoning MUST reference specific content from the transcript (not generic phrases).
-6. Do NOT use vague language like:
+7. Your reasoning MUST reference specific content from the transcript (not generic phrases).
+8. Do NOT use vague language like:
    "surprising moment", "exciting part", "interesting segment", "unexpected consequence".
-7. Do NOT use placeholders like [subject], [something], or generic hooks.
-8. The title and hook must be directly tied to what is actually said in the transcript.
-9. If multiple strong segments exist, choose the one with the highest emotional or informational impact.
+9. Do NOT use placeholders like [subject], [something], or generic hooks.
+10. The title and hook must be directly tied to what is actually said in the transcript.
+11. If multiple strong segments exist, choose the highest emotional or informational impact.
+
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON object. No explanation. No extra text. No markdown.
@@ -83,7 +86,7 @@ QUALITY CHECK BEFORE RESPONDING:
 - Is the reason specific and tied to transcript details? If not, rewrite.
 - Is the title concrete and descriptive? If not, rewrite.
 - Is the hook realistic and transcript-based? If not, rewrite.
-- Is the time range exactly 45–60 seconds? If not, fix it.
+- Is the time range exactly 45–60 seconds (+- few seconds due to sentence completion)? If not, fix it.
 `;
 
     
@@ -112,7 +115,7 @@ QUALITY CHECK BEFORE RESPONDING:
     });
     const result = await response.json()
     if(!response.ok){
-      const error = await response.text()
+      const error = result;
       throw new Error(error);
     }
 
