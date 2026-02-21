@@ -10,7 +10,7 @@ export const createJobController = (req, res) => {
 
   const jobId = generateJobId();
 
-  const jobDir = path.join(process.env.TEMP_DIR, jobId) 
+  const jobDir = path.join(os.tmpdir(), jobId) 
 
   createJob(jobId);
 
