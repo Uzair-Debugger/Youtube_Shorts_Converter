@@ -89,7 +89,7 @@ export default function Home() {
       setJobId(data.jobId);
       startPolling(data.jobId);
     } catch (err: any) {
-      setError(err.message);
+      setError(err);
       console.error('Conversion error:', err.message);
       setLoading(false);
     }
@@ -117,6 +117,7 @@ export default function Home() {
         }
 
         const status: JobStatus = await response.json();
+        console.log("Job Status: ", status)
         setJobStatus(status);
 
         if (status.status === 'completed' || status.status === 'failed') {

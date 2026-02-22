@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { error } from 'console';
 
 interface JobStatus {
   id: string;
@@ -112,7 +113,7 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
         {/* Progress Bar with ARIA */}
         <div>
           <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium">{jobStatus.message}</span>
+            <span className="font-medium text-red-500">{jobStatus.message}</span>
             <span className="text-purple-300" aria-label={`Progress: ${jobStatus.progress} percent`}>
               {jobStatus.progress}%
             </span>
@@ -193,7 +194,7 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
             className="p-4 bg-red-500/20 border border-red-500 rounded-lg"
           >
             <p className="text-red-200">
-              <span aria-hidden="true">❌</span> Processing failed. Please try another video or check the URL.
+              <span aria-hidden="true">❌</span> Processing failed. {jobStatus.message}
             </p>
           </div>
         )}
