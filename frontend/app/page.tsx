@@ -94,7 +94,7 @@ export default function Home() {
       console.error('Conversion error:', err.message);
       setLoading(false);
     }
-  }, [url]); 
+  }, [url, noOfShorts]); // missing noOfShorts dependecy led to state bug
 
   const startPolling = useCallback((id: string) => {
     let pollCount = 0;
