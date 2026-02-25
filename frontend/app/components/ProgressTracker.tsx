@@ -57,13 +57,13 @@ const StatusCard = memo(({ label, isComplete }: { label: string; isComplete: boo
   return (
     <div 
       className={`p-4 rounded-lg ${
-        isComplete ? 'bg-green-500/20 border-green-500' : 'bg-white/5 border-white/20'
+        isComplete ? 'bg-green-100 border-green-300' : 'bg-gray-50 border-gray-200'
       } border transition-colors duration-300`}
       role="status"
       aria-label={`${label}: ${isComplete ? 'Complete' : 'In progress'}`}
     >
-      <div className="text-sm text-gray-300">{label}</div>
-      <div className="text-lg font-semibold">
+      <div className="text-sm text-gray-600">{label}</div>
+      <div className="text-lg font-semibold text-gray-900">
         {isComplete ? (
           <>
             <span aria-hidden="true">✓</span> Complete
@@ -113,13 +113,13 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
         {/* Progress Bar with ARIA */}
         <div>
           <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-red-500">{jobStatus.message}</span>
-            <span className="text-purple-300" aria-label={`Progress: ${jobStatus.progress} percent`}>
+            <span className="font-medium text-red-600">{jobStatus.message}</span>
+            <span className="text-purple-600" aria-label={`Progress: ${jobStatus.progress} percent`}>
               {jobStatus.progress}%
             </span>
           </div>
           <div 
-            className="w-full bg-white/10 rounded-full h-3 overflow-hidden"
+            className="w-full bg-gray-200 rounded-full h-3 overflow-hidden"
             role="progressbar"
             aria-valuenow={jobStatus.progress}
             aria-valuemin={0}
@@ -127,7 +127,7 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
             aria-label="Conversion progress"
           >
             <div
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-500 rounded-full"
+              className="bg-purple-600 h-full transition-all duration-500 rounded-full"
               style={{ width: `${jobStatus.progress}%` }}
             />
           </div>
@@ -157,8 +157,8 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
         {jobStatus.status === 'completed' && (
           <>
             {loadingShorts ? (
-              <div className="p-6 bg-white/5 rounded-lg text-center">
-                <p className="text-gray-400">Loading shorts...</p>
+              <div className="p-6 bg-gray-50 rounded-lg text-center">
+                <p className="text-gray-600">Loading shorts...</p>
               </div>
             ) : shorts.length > 0 ? (
               <ShortsList jobId={jobStatus.id} shorts={shorts} />
@@ -171,7 +171,7 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
           <button
             onClick={onDownload}
             disabled={isDownloading}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-black"
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white"
             aria-label="Download your completed short video"
             aria-busy={isDownloading}
           >
@@ -191,9 +191,9 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
         {jobStatus.status === 'failed' && (
           <div 
             role="alert"
-            className="p-4 bg-red-500/20 border border-red-500 rounded-lg"
+            className="p-4 bg-red-100 border border-red-300 rounded-lg"
           >
-            <p className="text-red-200">
+            <p className="text-red-800">
               <span aria-hidden="true">❌</span> Processing failed. {jobStatus.message}
             </p>
           </div>

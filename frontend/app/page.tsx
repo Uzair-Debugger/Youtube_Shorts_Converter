@@ -34,12 +34,12 @@ function ProgressTrackerSkeleton() {
 
 // Memoized feature card component
 const FeatureCard = memo(({ emoji, title, description }: { emoji: string; title: string; description: string }) => (
-  <article className="text-center p-6">
+  <article className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
     <div className="text-4xl mb-4" role="img" aria-label={title}>
       {emoji}
     </div>
-    <h3 className="text-xl font-semibold mb-2">{title}</h3>
-    <p className="text-gray-300">{description}</p>
+    <h3 className="text-xl font-semibold mb-2 text-gray-900">{title}</h3>
+    <p className="text-gray-600">{description}</p>
   </article>
 ));
 
@@ -70,6 +70,7 @@ export default function Home() {
     setJobStatus(null);
 
     try {
+      console.log(`Frontend noOfShorts: ${noOfShorts}`)
       const response = await fetch(`${API_URL}/api/convert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -93,7 +94,7 @@ export default function Home() {
       console.error('Conversion error:', err.message);
       setLoading(false);
     }
-  }, [url]);
+  }, [url]); 
 
   const startPolling = useCallback((id: string) => {
     let pollCount = 0;
@@ -179,14 +180,14 @@ export default function Home() {
   return (
     <>
       {/* SEO Meta Tags - These should ideally be in a separate metadata export or Head component */}
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
+      <div className="min-h-screen bg-white text-gray-900">
         <div className="container mx-auto px-4 py-16">
           {/* Header with semantic HTML */}
           <header className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-purple-600">
               YouTube Shorts AI
             </h1>
-            <p className="text-lg sm:text-xl text-gray-300">
+            <p className="text-lg sm:text-xl text-gray-600">
               Transform any video into viral shorts with AI-powered analysis
             </p>
           </header>
@@ -194,7 +195,7 @@ export default function Home() {
           {/* Main Content */}
           <main>
             {/* Main Card with semantic article */}
-            <article className="max-w-3xl mx-auto bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20">
+            <article className="max-w-3xl mx-auto bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-200">
               {/* Input Form with proper labels and ARIA */}
               <form onSubmit={handleSubmit} className="mb-8" noValidate>
                 <div className="mb-4">
@@ -212,7 +213,7 @@ export default function Home() {
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       placeholder="https://www.youtube.com/watch?v=..."
-                      className="w-full px-4 py-3 bg-white/5 border border-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all"
                       disabled={loading}
                       required
                       aria-required="true"
@@ -223,17 +224,16 @@ export default function Home() {
 
                     <input 
                     type="number" 
-                    min={1} 
-                    defaultValue={1}
+                    value={noOfShorts}
                     onChange={(e) => setNoOfShorts(Number(e.target.value))} 
-                    className='w-20 mx-2 text-center p-1 bg-white/5 border border-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all' />
+                    className='w-20 mx-2 text-center p-1 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all' />
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading || !url}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white"
                   aria-busy={loading}
                 >
                   <span aria-hidden="true">🎬</span> {loading ? 'Processing...' : 'Create Short'}
@@ -246,9 +246,9 @@ export default function Home() {
                   id="url-error"
                   role="alert"
                   aria-live="polite"
-                  className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg"
+                  className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg"
                 >
-                  <p className="text-red-200">
+                  <p className="text-red-800">
                     <span aria-hidden="true">❌</span> {error}
                   </p>
                 </div>
@@ -264,11 +264,11 @@ export default function Home() {
               )}
               {/* Loading Indicator */}
               {loading && !jobStatus && (
-                <div className="mt-8 p-6 bg-purple-500/20 border border-purple-500 rounded-lg text-center">
+                <div className="mt-8 p-6 bg-purple-100 border border-purple-300 rounded-lg text-center">
                   <div className="inline-block">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
                   </div>
-                  <p className="text-purple-200 font-medium">Initializing conversion...</p>
+                  <p className="text-purple-800 font-medium">Initializing conversion...</p>
                 </div>
               )}
             </article>
