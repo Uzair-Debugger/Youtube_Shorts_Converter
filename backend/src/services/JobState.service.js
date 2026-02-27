@@ -34,13 +34,6 @@ export const updateJob = async (jobid, status, message, progress) => {
         updatedAt: new Date()
     });
 
-    //    try {
-
-    //        await updateFile(jobid)
-    //    } catch (error) {
-    //     console.log(`updateFile() Error: ${error.message}`)
-    //    }
-
     console.log(message, status, progress,"%")
 };
 

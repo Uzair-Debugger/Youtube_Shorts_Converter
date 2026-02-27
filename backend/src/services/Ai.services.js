@@ -10,7 +10,7 @@ export const transcribe = async (audioPath) => {
       "file",
       new File([buffer], "audio.mp3", { type: "audio/mpeg" })
     );
-    formData.append("model", "whisper-large-v3");
+    formData.append("model", "whisper-large-v3-turbo");
     formData.append("response_format", "verbose_json");
 
     const response = await fetch(
@@ -38,97 +38,104 @@ export const transcribe = async (audioPath) => {
 };
 
 
-export const analyzeBestMoment = async(audioTranscript, noOfShorts, videoDuration) =>{
+export const analyzeBestMoment = async (audioTranscript, noOfShorts, videoDuration) => {
 
-  try {
-const prompt = `
+  const prompt = `
 You are an expert YouTube Shorts editor, content analyst and an expert YouTube Shorts creator.
 
-Your task is to analyze the transcript and identify exactly ${noOfShorts} number of most viral, engaging, factual discovery and emotionally impactful 45–60 second segment.
+Your task is to analyze the transcript and identify noOfShorts must be exactly equals to ${noOfShorts}, and these should be the most viral, engaging, factually engaging, and emotionally impactful 45–60 second segments.
 
 Video Duration: ${videoDuration} seconds.
 
-Transcript:
-"${audioTranscript}"
+RULES:
+- No of moments identified must be equals to ${noOfShorts}.
+- Compare your identified best moments with ${noOfShorts}, if both are equal then return the response.
+- Each segment must be within the video bounds (startTime >= 0, endTime <= ${videoDuration}).
+- Start and end times must correspond to full sentences in the transcript.
+- Avoid the first 60 seconds unless it is clearly the strongest moment in the entire video.
+- Reason, Title, and Hook MUST accurately match the content of that specific segment, not from other segments.
+- Ensure the segments are diverse and cover different parts of the video where possible.
 
-CRITICAL RULES:
-1. The segment must be EXACTLY between 45-60 seconds (endTime - startTime).
-2. The short must Start from START OF SENTENCE and must End on an END OF Sentence.
-3. Avoid starting and ending of the short on half of sentence no matter if it exceeds few seconds i.e 1-10s from the bounded duration.
-4. The segment must be within video bounds (0 to ${videoDuration}).
-5. Avoid the first 60 seconds unless it is clearly the strongest moment in the entire video.
-6. Choose the moment that has the highest viral potential based on:
-   - a concrete revelation or fact
-   - a strong emotional reaction
-   - a surprising or controversial statement
-   - a turning point in the story
-   - a clear insight or lesson
-7. Your reasoning MUST reference specific content from the transcript (not generic phrases).
-8. Do NOT use vague language like:
-   "surprising moment", "exciting part", "interesting segment", "unexpected consequence".
-9. Do NOT use placeholders like [subject], [something], or generic hooks.
-10. The title and hook must be directly tied to what is actually said in the transcript.
-11. If multiple strong segments exist, choose the highest emotional or informational impact.
-
-
-OUTPUT FORMAT:
-Return ONLY a valid JSON object. No explanation. No extra text. No markdown.
+OUTPUT JSON ONLY:
 
 {
-  "startTime": 0.0,
-  "endTime": 0.0,
-  "reason": "Explain precisely why this segment is the best, referencing specific events, statements, or ideas from the transcript.",
-  "title": "A specific, concrete, and compelling title based on the exact content of the segment.",
-  "hook": "A sharp, curiosity-driven hook that directly reflects what happens or is said in the segment."
+ "segments":[
+   {
+     "startTime": 0,
+     "endTime": 0,
+     "reason": "",
+     "title": "",
+     "hook": ""
+   }
+   ${Array.from({ length: noOfShorts - 1 }, () => `,
+   {
+     "startTime": 0,
+     "endTime": 0,
+     "reason": "",
+     "title": "",
+     "hook": ""
+   }`).join('')}
+ ]
 }
 
-QUALITY CHECK BEFORE RESPONDING:
-- Is the reason specific and tied to transcript details? If not, rewrite.
-- Is the title concrete and descriptive? If not, rewrite.
-- Is the hook realistic and transcript-based? If not, rewrite.
-- Is the time range exactly 45–60 seconds (+- few seconds due to sentence completion)? If not, fix it.
+Transcript:
+${audioTranscript}
 `;
 
-    
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method: 'POST',
+// console.log(`My Prompt: ${prompt}\n\n`)
+console.log(`Transcript: ${audioTranscript}`)
+
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'Application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: "openai/gpt-oss-120b",
+        temperature: 0.2,
+        max_tokens: 1500,
+        response_format: { type: "json_object" },
         messages: [
-          {
-            role: 'system', 
-            content:'You are an expert video editor analyzing transcripts to find the most engaging segments. Always respond with a valid JSON only.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500,
-        response_format: { type: "json_object" }
-      })
-    });
-    const result = await response.json()
-    if(!response.ok){
-      const error = result;
-      throw new Error(error);
+          { role: "system", content: "Return ONLY valid JSON." },
+          { role: "user", content: prompt }
+        ]
+      }),
     }
+  );
 
-    console.log("AI Response: ",result.choices[0].message)
+  const result = await response.json();
 
-    // return result.choices[0].message.content; // This will give you undefined. we need to parse it. why?
-
-    const contentString = result.choices[0].message.content;
-    const parsedContent = JSON.parse(contentString);
-    // console.log("parsedContent: ", parsedContent)
-    return parsedContent;
-  } catch (error) {
-    console.log("Analyzing Best Moment ERROR: ", error.message);
-    throw error;
+  if (!response.ok) {
+    throw new Error(result.error?.message || "AI request failed");
   }
-}
+
+  // ---------- SAFE JSON PARSE ----------
+  let parsed;
+
+  try {
+    parsed = JSON.parse(result.choices[0].message.content);
+  } catch {
+    throw new Error("AI returned invalid JSON");
+  }
+
+  // ---------- HARD VALIDATION ----------
+  if (!parsed.segments || !Array.isArray(parsed.segments)) {
+    throw new Error("AI returned no segments array");
+  }
+
+  if (parsed.segments.length !== noOfShorts) {
+    console.warn("AI returned wrong count, continuing anyway...");
+  }
+
+  // ---------- SANITIZE NUMBERS ----------
+  parsed.segments = parsed.segments.map(s => ({
+    ...s,
+    startTime: Number(s.startTime),
+    endTime: Number(s.endTime)
+  }));
+
+  return parsed;
+};

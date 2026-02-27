@@ -2,7 +2,7 @@ import app from './app.js'
 import { config } from './config/PortConfig.js'
 
 app.get('/', function(req, res){
-    res.json({status: "Running..."})
+    res.json({status: `Server Up and Running on PORT ${config.port}`})
 })
 app.get('/health', function(req, res){
     res.json({status: "OK"})

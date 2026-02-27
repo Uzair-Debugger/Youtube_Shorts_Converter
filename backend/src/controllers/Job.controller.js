@@ -14,7 +14,8 @@ export const createJobController = (req, res) => {
 
   createJob(jobId);
 
-  // 🔥 background execution
+  // background execution
+  // console.log(`The noOfShorts received from frontend is: ${noOfShorts}`)
   runJob(jobId, youtubeUrl, noOfShorts, jobDir);
 
   res.json({ 
