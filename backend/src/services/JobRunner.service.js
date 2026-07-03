@@ -34,7 +34,7 @@ export const runJob = async (jobId, youtubeUrl, noOfShorts, jobDir) => {
     const result = await executeCommand(downloadCommand);
 
     if (!result.success) {
-      
+
       await updateJob(jobId, 'failed', result.error, 0);
       return;
     }
@@ -116,7 +116,7 @@ export const runJob = async (jobId, youtubeUrl, noOfShorts, jobDir) => {
 
       const inputPath = path.join(jobDir, `input${created + 1}.mp4`);
 
-      console.log(`Creating short ${created+1}: start=${start}, duration=${duration}`);
+      console.log(`Creating short ${created + 1}: start=${start}, duration=${duration}`);
 
       const cutCommand =
         `ffmpeg -i "${videoPath}" -ss ${start} -t ${duration} -c:v libx264 -preset fast -c:a aac "${inputPath}"`;

@@ -1,42 +1,47 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import fs from "fs";
+import path from "path";
+dotenv.config();
 
 export const transcribe = async (audioPath) => {
-  try {
-    const buffer = fs.readFileSync(audioPath);
+  const buffer = fs.readFileSync(audioPath);
 
-    const formData = new FormData();
-    formData.append(
-      "file",
-      new File([buffer], "audio.mp3", { type: "audio/mpeg" })
-    );
-    formData.append("model", "whisper-large-v3-turbo");
-    formData.append("response_format", "verbose_json");
+  const blob = new Blob([buffer], {
+    type: "audio/mpeg",
+  });
 
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/audio/transcriptions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: formData,
-      }
-    );
+  const formData = new FormData();
+  formData.append("file", blob, path.basename(audioPath));
+  formData.append("model", "whisper-large-v3-turbo");
+  formData.append("response_format", "verbose_json");
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(err);
+  // console.log(`GROQ_API_KEY Loaded: ${process.env.GROQ_API_KEY}`)
+
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: formData,
     }
+  );
 
-    return await response.json();
+  if (!response.ok) {
+    const errorText = await response.text();
 
-  } catch (error) {
-    console.error("Transcription Error:", error.message);
-    throw error;
+    console.error({
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+    });
+
+    throw new Error(errorText);
   }
-};
 
+  return response.json();
+};
 
 export const analyzeBestMoment = async (audioTranscript, noOfShorts, videoDuration) => {
 
@@ -82,8 +87,8 @@ Transcript:
 ${audioTranscript}
 `;
 
-// console.log(`My Prompt: ${prompt}\n\n`)
-console.log(`Transcript: ${audioTranscript}`)
+  // console.log(`My Prompt: ${prompt}\n\n`)
+  console.log(`Transcript: ${audioTranscript}`)
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
