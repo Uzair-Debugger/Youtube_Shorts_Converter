@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//////////////////////////////
+// ENUMS
+//////////////////////////////
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  TRIALING
+}
+
+enum VideoStatus {
+  UPLOADING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+//////////////////////////////
+// USER
+//////////////////////////////
+
+model User {
+  id       String  @id @default(cuid())
+  name     String?
+  email    String  @unique
+  password String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription  Subscription?
+  videos        Video[]
+  usage         Usage[]
+  refreshTokens RefreshToken[]
+}
+
+//////////////////////////////
+// SUBSCRIPTION
+//////////////////////////////
+
+model Subscription {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  plan   Plan               @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+}
+
+//////////////////////////////
+// VIDEO
+//////////////////////////////
+
+model Video {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title            String?
+  originalFilename String
+
+  storagePath String
+
+  duration Float?
+
+  fileSize Int?
+
+  status VideoStatus @default(UPLOADING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transcript Transcript?
+  job        ProcessingJob?
+}
+
+//////////////////////////////
+// TRANSCRIPT
+//////////////////////////////
+
+model Transcript {
+  id String @id @default(cuid())
+
+  videoId String @unique
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  language String
+
+  text String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////
+// PROCESSING JOB
+//////////////////////////////
+
+model ProcessingJob {
+  id String @id @default(cuid())
+
+  videoId String @unique
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  status String
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  processingTime Int?
+
+  errorMessage String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////
+// USAGE
+//////////////////////////////
+
+model Usage {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  month Int
+  year  Int
+
+  videosProcessed Int @default(0)
+
+  minutesProcessed Float @default(0)
+
+  tokensUsed Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, month, year])
+}
+
+//////////////////////////////
+// REFRESH TOKEN
+//////////////////////////////
+
+model RefreshToken {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String
+
+  device String?
+
+  ipAddress String?
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+}

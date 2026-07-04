@@ -2,3 +2,4 @@
 /test/
 .env
 /Learning.md
+/src/generated/prisma
