@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { jobRoutes } from './routes/Job.routes.js'
+import router from './routes/index.js'
 
 const app = express()
 
@@ -17,7 +17,7 @@ app.use(function (req, res, next) {
 
 app.use(express.json())
 
-app.use('/api', jobRoutes)
+app.use('/api/v1', router)
 
 
 
