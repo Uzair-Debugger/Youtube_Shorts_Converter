@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/register', '/_next', '/favicon.ico'];
-const ACCESS_TOKEN_KEY = 'access_token';
+const PUBLIC_PATHS = process.env.NEXT_PUBLIC_PUBLIC_PATHS
+  ? JSON.parse(process.env.NEXT_PUBLIC_PUBLIC_PATHS)
+  : ['/', '/login', '/register', '/_next', '/favicon.ico'];
+const ACCESS_TOKEN_KEY = process.env.NEXT_PUBLIC_ACCESS_TOKEN_KEY || 'access_token';
 
 function decodeJwtPayload(token: string): { exp: number } | null {
   try {

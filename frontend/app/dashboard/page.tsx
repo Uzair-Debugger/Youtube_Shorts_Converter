@@ -1,13 +1,42 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { authApi } from '../../lib/auth';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [noOfShorts, setNoOfShorts] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogout = async () => {
     await logout();
     window.location.href = '/login';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const url = youtubeUrl.trim();
+    if (!url) {
+      setError('Please enter a YouTube URL');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await authApi.createJob(url, noOfShorts);
+      router.push(`/job/${result.jobId}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create job';
+      setError(message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,14 +66,7 @@ export default function DashboardPage() {
               Enter a YouTube URL below to transform it into engaging shorts with AI-powered analysis.
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert('Converter form would submit here with authentication.');
-              }}
-              className="space-y-4"
-              noValidate
-            >
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="youtube-url" className="block text-sm font-medium text-gray-700 mb-1">
                   YouTube Video URL
@@ -52,8 +74,11 @@ export default function DashboardPage() {
                 <input
                   id="youtube-url"
                   type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=..."
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all"
+                  disabled={loading}
                   required
                   autoComplete="url"
                 />
@@ -67,16 +92,30 @@ export default function DashboardPage() {
                   id="shorts-count"
                   type="number"
                   min={1}
-                  defaultValue={1}
+                  value={noOfShorts}
+                  onChange={(e) => setNoOfShorts(Number(e.target.value))}
                   className="w-24 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 transition-all"
+                  disabled={loading}
+                  required
                 />
               </div>
 
+              {error && (
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="p-3 bg-red-100 border border-red-300 rounded-lg"
+                >
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-lg transition-all transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white"
+                disabled={loading}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-lg transition-all transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white"
               >
-                Create Shorts
+                {loading ? 'Creating...' : 'Create Shorts'}
               </button>
             </form>
           </section>

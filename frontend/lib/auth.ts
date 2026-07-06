@@ -39,8 +39,8 @@ export interface ApiError {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+const ACCESS_TOKEN_KEY = process.env.NEXT_PUBLIC_ACCESS_TOKEN_KEY || 'access_token';
+const REFRESH_TOKEN_KEY = process.env.NEXT_PUBLIC_REFRESH_TOKEN_KEY || 'refresh_token';
 
 // what decodeJwtPayload do?
 // The decodeJwtPayload function takes a JWT token as input and decodes its payload (the middle part of the token).
@@ -72,6 +72,21 @@ async function parseResponse<T>(response: Response): Promise<T> {
     throw new Error(error.message || 'Request failed');
   }
   return data as T;
+}
+
+export interface CreateJobResponse {
+  jobId: string;
+  message: string;
+  youtubeUrl: string;
+  noOfShorts: number;
+}
+
+export interface JobStatusResponse {
+  id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  shorts?: any[];
 }
 
 export const authApi = {
@@ -113,6 +128,20 @@ export const authApi = {
       credentials: 'include',
     });
     return parseResponse<LogoutResponse>(response);
+  },
+
+  createJob: async (youtubeUrl: string, noOfShorts: number): Promise<CreateJobResponse> => {
+    const response = await authenticatedFetch(`${API_URL}/api/v1/job/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ youtubeUrl, noOfShorts }),
+    });
+    return parseResponse<CreateJobResponse>(response);
+  },
+
+  getJob: async (jobId: string): Promise<JobStatusResponse> => {
+    const response = await authenticatedFetch(`${API_URL}/api/v1/job/status/${jobId}`);
+    return parseResponse<JobStatusResponse>(response);
   },
 };
 // what does tokenStorage function do?

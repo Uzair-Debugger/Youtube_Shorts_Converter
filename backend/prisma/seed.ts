@@ -8,7 +8,7 @@ const adapter = new PrismaPg({
 });
 
 const prisma = new PrismaClient({ adapter });
-const PASSWORD = 'password123';
+const PASSWORD = process.env.SEED_USER_PASSWORD || 'password123';
 const SALT_ROUNDS = 10;
 
 const assert = (condition: boolean, message: string) => {
