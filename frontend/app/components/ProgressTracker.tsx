@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { error } from 'console';
+import { authenticatedFetch } from '../../lib/auth';
 
 interface JobStatus {
   id: string;
@@ -26,9 +26,7 @@ interface Short {
 }
 
 interface ProgressTrackerProps {
-  jobStatus: JobStatus;
-  onDownload: () => void;
-  isDownloading?: boolean;
+  initialJobId: string;
 }
 
 // Lazy load ShortsList component
@@ -41,7 +39,7 @@ const ShortsList = dynamic(() => import('./ShortsList'), {
 const StatusCard = memo(({ label, isComplete }: { label: string; isComplete: boolean }) => {
   const getStatusText = () => {
     if (isComplete) return 'Complete';
-    
+
     switch (label) {
       case 'AI Analysis':
         return 'Analyzing...';
@@ -55,10 +53,9 @@ const StatusCard = memo(({ label, isComplete }: { label: string; isComplete: boo
   };
 
   return (
-    <div 
-      className={`p-4 rounded-lg ${
-        isComplete ? 'bg-green-100 border-green-300' : 'bg-gray-50 border-gray-200'
-      } border transition-colors duration-300`}
+    <div
+      className={`p-4 rounded-lg ${isComplete ? 'bg-green-100 border-green-300' : 'bg-gray-50 border-gray-200'
+        } border transition-colors duration-300`}
       role="status"
       aria-label={`${label}: ${isComplete ? 'Complete' : 'In progress'}`}
     >
@@ -80,18 +77,46 @@ const StatusCard = memo(({ label, isComplete }: { label: string; isComplete: boo
 
 StatusCard.displayName = 'StatusCard';
 
-function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: ProgressTrackerProps) {
+function ProgressTracker({ initialJobId }: ProgressTrackerProps) {
+  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [shorts, setShorts] = useState<Short[]>([]);
   const [loadingShorts, setLoadingShorts] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  const fetchJob = useCallback(async (stopPolling?: () => void) => {
+    if (!initialJobId) return;
+    try {
+      const response = await authenticatedFetch(`${API_URL}/api/v1/job/status/${initialJobId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setJobStatus(data);
+        setError('');
+        if (data.status === 'completed' || data.status === 'failed') {
+          stopPolling?.();
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load job');
+    } finally {
+      setLoading(false);
+    }
+  }, [initialJobId, API_URL]);
+
+  useEffect(() => {
+    const interval = setInterval(() => fetchJob(() => clearInterval(interval)), 4000);
+    fetchJob(() => clearInterval(interval));
+    return () => clearInterval(interval);
+  }, [fetchJob]);
 
   // Fetch shorts when job is completed
   useEffect(() => {
-    if (jobStatus.status === 'completed' && jobStatus.id) {
+    if (jobStatus?.status === 'completed' && jobStatus.id) {
       const fetchShorts = async () => {
         setLoadingShorts(true);
         try {
-          const response = await fetch(`${API_URL}/api/shorts/${jobStatus.id}`);
+          const response = await authenticatedFetch(`${API_URL}/api/v1/job/shorts/${jobStatus.id}`);
           if (response.ok) {
             const data = await response.json();
             setShorts(data.shorts || []);
@@ -105,7 +130,25 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
 
       fetchShorts();
     }
-  }, [jobStatus.status, jobStatus.id, API_URL]);
+  }, [jobStatus?.status, jobStatus?.id, API_URL]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
+        <p className="text-gray-600">Loading job status...</p>
+      </div>
+    );
+  }
+
+  if (error || !jobStatus) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Job not found'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section aria-live="polite" aria-atomic="true">
@@ -118,7 +161,7 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
               {jobStatus.progress}%
             </span>
           </div>
-          <div 
+          <div
             className="w-full bg-gray-200 rounded-full h-3 overflow-hidden"
             role="progressbar"
             aria-valuenow={jobStatus.progress}
@@ -135,19 +178,19 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
 
         {/* Status Indicators */}
         <div className="grid grid-cols-2 gap-4">
-          <StatusCard 
+          <StatusCard
             label="Download"
             isComplete={jobStatus.progress >= 20}
           />
-          <StatusCard 
+          <StatusCard
             label="AI Analysis"
             isComplete={jobStatus.progress >= 50}
           />
-          <StatusCard 
+          <StatusCard
             label="Processing"
             isComplete={jobStatus.progress >= 75}
           />
-          <StatusCard 
+          <StatusCard
             label="Finalization"
             isComplete={jobStatus.status === 'completed'}
           />
@@ -166,30 +209,9 @@ function ProgressTracker({ jobStatus, onDownload, isDownloading = false }: Progr
           </>
         )}
 
-        {/* Download Button (Legacy - for first short) */}
-        {jobStatus.status === 'completed' && shorts.length === 0 && (
-          <button
-            onClick={onDownload}
-            disabled={isDownloading}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white"
-            aria-label="Download your completed short video"
-            aria-busy={isDownloading}
-          >
-            {isDownloading ? (
-              <>
-                <span className="inline-block animate-spin mr-2">⏳</span> Downloading...
-              </>
-            ) : (
-              <>
-                <span aria-hidden="true">⬇️</span> Download Your Short
-              </>
-            )}
-          </button>
-        )}
-
         {/* Failure Message */}
         {jobStatus.status === 'failed' && (
-          <div 
+          <div
             role="alert"
             className="p-4 bg-red-100 border border-red-300 rounded-lg"
           >

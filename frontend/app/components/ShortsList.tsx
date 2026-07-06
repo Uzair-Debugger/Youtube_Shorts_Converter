@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useDownload } from './useDownload';
 
 interface Short {
   index: number;
@@ -23,45 +24,36 @@ interface ShortsListProps {
 
 export default function ShortsList({ jobId, shorts }: ShortsListProps) {
   const [selectedShort, setSelectedShort] = useState<Short | null>(shorts.length > 0 ? shorts[0] : null);
-  const [downloading, setDownloading] = useState(false);
-  const [error, setError] = useState('');
+  const [selectedShorts, setSelectedShorts] = useState<Set<number>>(new Set());
+  
+  const { downloading, error, downloadSingle, downloadBatch, clearError } = useDownload();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const toggleSelectShort = useCallback((index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedShorts);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedShorts(newSelected);
+  }, [selectedShorts]);
 
   const handleDownload = useCallback(async (short: Short) => {
-    if (!short.fileExists) {
-      setError('Short file not found');
-      return;
-    }
+    await downloadSingle(jobId, short);
+  }, [jobId, downloadSingle]);
 
-    setDownloading(true);
-    setError('');
-    try {
-      const response = await fetch(`${API_URL}/api/download/${jobId}/${short.index - 1}`);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Download failed');
-      }
+  const handleBatchDownload = useCallback(async () => {
+    const shortsToDownload = shorts.filter(s => selectedShorts.has(s.index));
+    await downloadBatch(jobId, shortsToDownload);
+    setSelectedShorts(new Set());
+  }, [jobId, shorts, selectedShorts, downloadBatch]);
 
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `short_${jobId}_${short.index}.mp4`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      console.log(`Short ${short.index} downloaded successfully`);
-      setDownloading(false);
-    } catch (err: any) {
-      setError(`Download error: ${err.message}`);
-      console.error('Download error:', err);
-      setDownloading(false);
-    }
-  }, [jobId, API_URL]);
+  const handleSelectAll = useCallback(() => {
+    const allIndices = shorts.filter(s => s.fileExists).map(s => s.index);
+    const allSelected = allIndices.every(idx => selectedShorts.has(idx));
+    setSelectedShorts(allSelected ? new Set() : new Set(allIndices));
+  }, [shorts, selectedShorts]);
 
   if (!shorts || shorts.length === 0) {
     return (
@@ -71,14 +63,35 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
     );
   }
 
+  const selectedCount = selectedShorts.size;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
       {/* Shorts Grid */}
       <div className="lg:col-span-2">
-        <h3 className="text-2xl font-bold mb-6 text-gray-900">
-          All Shorts Created ({shorts.length})
-        </h3>
-        
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">
+            All Shorts Created ({shorts.length})
+          </h3>
+          {selectedCount > 0 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedShorts(new Set())}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleBatchDownload}
+                disabled={downloading}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-all"
+              >
+                {downloading ? 'Downloading...' : `Download ${selectedCount} Selected`}
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {shorts.map((short, idx) => (
             <div
@@ -90,6 +103,12 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
                   : 'border-gray-200 bg-white hover:border-purple-300'
               }`}
             >
+              {/* Selection Reason Preview */}
+              <div className="mb-2 text-xs text-gray-600 line-clamp-2">
+                <span className="font-medium text-purple-600">Why: </span>
+                {short.reason || 'AI-selected segment'}
+              </div>
+
               {/* Thumbnail placeholder */}
               <div className="w-full aspect-video bg-gray-200 rounded-lg mb-3 flex items-center justify-center">
                 <span className="text-4xl font-bold text-purple-600">#{short.index}</span>
@@ -100,13 +119,22 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
                 {short.title || `Short ${short.index}`}
               </h4>
               
-              <div className="text-xs text-gray-500 space-y-1">
-                <p>Duration: {short.duration.toFixed(1)}s</p>
-                <p>Size: {short.fileSizeInMB} MB</p>
-                <p className={short.fileExists ? 'text-green-600' : 'text-red-600'}>
-                  {short.fileExists ? '✓ Ready' : '✗ Missing'}
-                </p>
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Duration: {short.duration.toFixed(1)}s</span>
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedShorts.has(short.index)}
+                    onChange={() => {}}
+                    onClick={(e) => toggleSelectShort(short.index, e)}
+                    className="w-3 h-3 text-purple-600 rounded focus:ring-purple-500"
+                  />
+                  <span>Select</span>
+                </label>
               </div>
+              <p className={`text-xs ${short.fileExists ? 'text-green-600' : 'text-red-600'}`}>
+                {short.fileExists ? '✓ Ready' : '✗ Missing'}
+              </p>
 
               {/* Download button */}
               <button
