@@ -1,8 +1,8 @@
 import path from 'path';
 import os from 'os';
+import fs from 'fs';
 import { jobs } from '../store/job.js';
 import { error } from 'console';
-
 
 export const downloadVideoController = async (req, res) => {
   const { jobId } = req.params
@@ -17,14 +17,11 @@ export const downloadVideoController = async (req, res) => {
 
   const outputPath = path.join(process.env.TEMP_DIR || os.tmpdir(), jobId, 'input1.mp4')
 
-  // Check if file exists
-  const fs = await import('fs');
   if (!fs.existsSync(outputPath)) {
     console.error(`File not found at: ${outputPath}`);
     return res.status(400).json({ error: 'Video file not found. The conversion may have failed.' })
   }
 
-  // Check file size
   const stats = fs.statSync(outputPath);
   const fileSizeInMB = (stats.size / 1024 / 1024).toFixed(2);
   console.log(`Downloading file from: ${outputPath} (Size: ${fileSizeInMB} MB)`);
@@ -34,32 +31,18 @@ export const downloadVideoController = async (req, res) => {
     return res.status(400).json({ error: 'Video file is empty. The conversion likely failed.' })
   }
 
-  try {
-    // Set headers explicitly to ensure download works
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}.mp4"`);
-    res.setHeader('Content-Length', stats.size);
+  res.setHeader('Content-Type', 'video/mp4');
+  res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}.mp4"`);
+  // No Content-Length — let Node stream it without a size contract
 
-    console.log(`[DOWNLOAD] Headers set - Content-Length: ${stats.size}, filename: short_${jobId}.mp4`);
-
-    res.download(outputPath, `short_${jobId}.mp4`, (err) => {
-      if (err) {
-        if (!res.headersSent) {
-          console.error('❌ Download error (headers not sent):', err);
-          return res.status(400).json({ error: 'Downloading Error' })
-        }
-        console.error('❌ Download error (headers already sent):', err)
-      } else {
-        console.log('✓ Video downloaded successfully to client')
-      }
-    })
-  } catch (error) {
-    if (!res.headersSent) {
-      console.error('❌ Exception in downloadVideoController:', error);
-      return res.status(400).json({ error: `downloadVideoController error: ${error.message}` })
-    }
-    console.error('❌ Unexpected error in downloadVideoController:', error)
-  }
+  const stream = fs.createReadStream(outputPath);
+  stream.pipe(res);
+  stream.on('end', () => console.log('✓ Video downloaded successfully to client'));
+  stream.on('error', (err) => {
+    console.error('❌ Stream error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Stream error' });
+  });
+  req.on('close', () => stream.destroy());
 }
 
 // Get list of all shorts with their details
@@ -75,7 +58,6 @@ export const getShortsListController = async (req, res) => {
     return res.status(400).json({ error: 'Job is not completed yet' })
   }
 
-  const fs = await import('fs');
   const shorts = (job.shorts || []).map((short, index) => {
     const shortPath = path.join(process.env.TEMP_DIR || os.tmpdir(), jobId, short.filename)
     const fileExists = fs.existsSync(shortPath)
@@ -118,14 +100,11 @@ export const downloadShortController = async (req, res) => {
   const short = job.shorts[index]
   const outputPath = path.join(process.env.TEMP_DIR || os.tmpdir(), jobId, short.filename)
 
-  // Check if file exists
-  const fs = await import('fs');
   if (!fs.existsSync(outputPath)) {
     console.error(`File not found at: ${outputPath}`);
     return res.status(400).json({ error: 'Short file not found' })
   }
 
-  // Check file size
   const stats = fs.statSync(outputPath);
   const fileSizeInMB = (stats.size / 1024 / 1024).toFixed(2);
   console.log(`Downloading short ${index + 1} from: ${outputPath} (Size: ${fileSizeInMB} MB)`);
@@ -135,29 +114,76 @@ export const downloadShortController = async (req, res) => {
     return res.status(400).json({ error: 'Short file is empty' })
   }
 
+  res.setHeader('Content-Type', 'video/mp4');
+  res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}_${index + 1}.mp4"`);
+  // No Content-Length — let Node stream it without a size contract
+
+  const stream = fs.createReadStream(outputPath);
+  stream.pipe(res);
+  stream.on('end', () => console.log(`✓ Short ${index + 1} downloaded successfully`));
+  stream.on('error', (err) => {
+    console.error('❌ Stream error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Stream error' });
+  });
+  req.on('close', () => stream.destroy());
+}
+
+// Download multiple shorts as ZIP archive
+export const downloadBatchController = async (req, res) => {
+  const { jobId } = req.params
+  const job = jobs.get(jobId)
+  const { shortIndices } = req.body
+
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' })
+  }
+
+  if (job.status !== 'completed') {
+    return res.status(400).json({ error: 'Job is not completed yet' })
+  }
+
+  if (!Array.isArray(shortIndices) || shortIndices.length === 0) {
+    return res.status(400).json({ error: 'No shorts selected for download' })
+  }
+
+  const archiver = await import('archiver');
+  const archive = archiver.default('zip', { zlib: { level: 5 } });
+
   try {
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}_${index + 1}.mp4"`);
-    res.setHeader('Content-Length', stats.size);
+    const outputPath = path.join(process.env.TEMP_DIR || os.tmpdir(), jobId);
+    const validShorts = shortIndices.filter(idx => idx >= 0 && idx < (job.shorts || []).length);
 
-    console.log(`[DOWNLOAD] Short ${index + 1} - Headers set - Content-Length: ${stats.size}`);
-
-    res.download(outputPath, `short_${jobId}_${index + 1}.mp4`, (err) => {
-      if (err) {
-        if (!res.headersSent) {
-          console.error('❌ Download error (headers not sent):', err);
-          return res.status(400).json({ error: 'Download failed' })
-        }
-        console.error('❌ Download error:', err)
-      } else {
-        console.log(`✓ Short ${index + 1} downloaded successfully`)
-      }
-    })
-  } catch (error) {
-    if (!res.headersSent) {
-      console.error('❌ Exception in downloadShortController:', error);
-      return res.status(400).json({ error: `Download error: ${error.message}` })
+    if (validShorts.length === 0) {
+      return res.status(400).json({ error: 'No valid shorts selected' })
     }
-    console.error('❌ Unexpected error:', error)
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="shorts_${jobId}.zip"`);
+
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to create archive' })
+      }
+    });
+
+    archive.pipe(res);
+
+    for (const shortIndex of validShorts) {
+      const short = job.shorts[shortIndex];
+      const filePath = path.join(outputPath, short.filename);
+      
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: `${short.filename}` });
+      }
+    }
+
+    await archive.finalize();
+    console.log(`Batch download created with ${validShorts.length} shorts`);
+  } catch (err) {
+    console.error('Batch download error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: `Batch download error: ${err.message}` })
+    }
   }
 }
