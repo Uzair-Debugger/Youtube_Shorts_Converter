@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useDownload } from './useDownload';
 
 interface Short {
+  [key: string]: any;
   index: number;
   filename: string;
   startTime: number;
@@ -25,8 +26,8 @@ interface ShortsListProps {
 export default function ShortsList({ jobId, shorts }: ShortsListProps) {
   const [selectedShort, setSelectedShort] = useState<Short | null>(shorts.length > 0 ? shorts[0] : null);
   const [selectedShorts, setSelectedShorts] = useState<Set<number>>(new Set());
-  
-  const { downloading, error, downloadSingle, downloadBatch, clearError } = useDownload();
+
+  const { downloadingIndex, error, downloadSingle, downloadBatch, clearError } = useDownload();
 
   const toggleSelectShort = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,10 +84,10 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
               </button>
               <button
                 onClick={handleBatchDownload}
-                disabled={downloading}
+                disabled={downloadingIndex !== null}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-all"
               >
-                {downloading ? 'Downloading...' : `Download ${selectedCount} Selected`}
+                {downloadingIndex === -1 ? 'Downloading...' : `Download ${selectedCount} Selected`}
               </button>
             </div>
           )}
@@ -97,11 +98,10 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
             <div
               key={idx}
               onClick={() => setSelectedShort(short)}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition-all transform hover:scale-105 ${
-                selectedShort?.index === short.index
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 bg-white hover:border-purple-300'
-              }`}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all transform hover:scale-105 ${selectedShort?.index === short.index
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-200 bg-white hover:border-purple-300'
+                }`}
             >
               {/* Selection Reason Preview */}
               <div className="mb-2 text-xs text-gray-600 line-clamp-2">
@@ -118,14 +118,14 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
               <h4 className="font-semibold text-gray-900 text-sm line-clamp-1 mb-2">
                 {short.title || `Short ${short.index}`}
               </h4>
-              
+
               <div className="flex justify-between text-xs text-gray-500 mb-2">
                 <span>Duration: {short.duration.toFixed(1)}s</span>
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedShorts.has(short.index)}
-                    onChange={() => {}}
+                    onChange={() => { }}
                     onClick={(e) => toggleSelectShort(short.index, e)}
                     className="w-3 h-3 text-purple-600 rounded focus:ring-purple-500"
                   />
@@ -142,10 +142,10 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
                   e.stopPropagation();
                   handleDownload(short);
                 }}
-                disabled={!short.fileExists || downloading}
+                disabled={!short.fileExists || downloadingIndex !== null}
                 className="w-full mt-3 py-2 px-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-all text-white"
               >
-                {downloading ? 'Downloading...' : '⬇ Download'}
+                {downloadingIndex === short.index ? 'Downloading...' : '⬇ Download'}
               </button>
             </div>
           ))}
@@ -156,7 +156,7 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
       <div className="lg:col-span-1">
         <div className="sticky top-4">
           <h3 className="text-xl font-bold mb-4 text-purple-600">Short Details</h3>
-          
+
           {selectedShort ? (
             <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
               {/* Short Number */}
@@ -222,19 +222,13 @@ export default function ShortsList({ jobId, shorts }: ShortsListProps) {
               {/* Download Button */}
               <button
                 onClick={() => handleDownload(selectedShort)}
-                disabled={!selectedShort.fileExists || downloading}
+                disabled={!selectedShort.fileExists || downloadingIndex !== null}
                 className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg font-semibold transition-all text-white transform hover:scale-105"
               >
-                {downloading ? (
-                  <>
-                    <span className="inline-block animate-spin mr-2">⌛</span>
-                    Downloading...
-                  </>
+                {downloadingIndex === selectedShort.index ? (
+                  <><span className="inline-block animate-spin mr-2">⌛</span>Downloading...</>
                 ) : (
-                  <>
-                    <span className="mr-2">⬇️</span>
-                    Download Short
-                  </>
+                  <><span className="mr-2">⬇️</span>Download Short</>
                 )}
               </button>
 

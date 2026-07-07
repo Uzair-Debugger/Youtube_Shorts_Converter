@@ -33,9 +33,7 @@ export const downloadVideoController = async (req, res) => {
 
   res.setHeader('Content-Type', 'video/mp4');
   res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}.mp4"`);
-  res.setHeader('Content-Length', stats.size);
-
-  console.log(`[DOWNLOAD] Headers set - Content-Length: ${stats.size}, filename: short_${jobId}.mp4`);
+  // No Content-Length — let Node stream it without a size contract
 
   const stream = fs.createReadStream(outputPath);
   stream.pipe(res);
@@ -118,9 +116,7 @@ export const downloadShortController = async (req, res) => {
 
   res.setHeader('Content-Type', 'video/mp4');
   res.setHeader('Content-Disposition', `attachment; filename="short_${jobId}_${index + 1}.mp4"`);
-  res.setHeader('Content-Length', stats.size);
-
-  console.log(`[DOWNLOAD] Short ${index + 1} - Headers set - Content-Length: ${stats.size}`);
+  // No Content-Length — let Node stream it without a size contract
 
   const stream = fs.createReadStream(outputPath);
   stream.pipe(res);
