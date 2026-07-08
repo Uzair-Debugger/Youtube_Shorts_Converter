@@ -71,6 +71,9 @@ model Subscription {
 
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  stripePriceId        String?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
 }
 
 //////////////////////////////

@@ -28,19 +28,19 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-
 app.use(function (req, res, next) {
-
     console.log(`${req.method} ${req.url}`)
-
     next();
 })
 
+// Capture raw body for Stripe webhook signature verification BEFORE express.json()
+app.use('/api/v1/subscription/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
+    req.rawBody = req.body;
+    next();
+});
 
 app.use(express.json())
 
 app.use('/api/v1', router)
-
-
 
 export default app

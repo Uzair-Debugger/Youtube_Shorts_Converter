@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../lib/auth';
@@ -48,6 +49,12 @@ export default function DashboardPage() {
             <span className="text-gray-700">
               Hello, <span className="font-medium">{user?.name || user?.email}</span>
             </span>
+            <Link
+              href="/billing"
+              className="px-4 py-2 border border-purple-500 text-purple-600 hover:bg-purple-50 font-medium rounded-lg transition-all text-sm"
+            >
+              Billing
+            </Link>
             <button
               onClick={handleLogout}
               className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
